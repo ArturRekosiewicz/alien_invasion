@@ -5,6 +5,7 @@ class GameStats:
         """inicjalizacja danych statystycznych"""
         self.settings = ai_game.settings
         self.reset_stats()
+        self.high_score = 0
 
         # uruchomienie gry "inwazja obych" w stanie nieaktywnym.
         self.game_active = False
@@ -13,3 +14,5 @@ class GameStats:
         """Inicjalizacja danych statysycznych,ktore moga zmienaic sie
             w trakcie gry"""
         self.ships_left = self.settings.ship_limit
+        self.score = 0
+        self.level = 1

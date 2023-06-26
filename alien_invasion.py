@@ -5,6 +5,7 @@ import pygame
 
 from settings import Settings
 from game_stats import GameStats
+from scoreboard import Scoreboard
 from button import Button
 from ship import Ship
 from alien import Alien
@@ -24,6 +25,7 @@ class AlienInvasion:
 
         # utworzenie egzemplarza przechowujacego dane statysttyczne gry.
         self.stats = GameStats(self)
+        self.sb = Scoreboard(self)
 
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
@@ -65,9 +67,16 @@ class AlienInvasion:
         """rozpoczecie nowej gry po klikieciu przycisku Gra przez uzytkownika."""
         button_clicked = self.play_button.rect.collidepoint(mouse_pos)
         if button_clicked and not self.stats.game_active:
+            # reset ustawien gry
+            self.settings.initialize_dynamic_settings()
+
             #wyzerowanie danych statystycznych gry.
             self.stats.reset_stats()
             self.stats.game_active = True
+            self.sb.prep_score()
+            self.sb.prep_level()
+            self.sb.prep_ships()
+
 
             #usuniecie zawartosci list aliens i bullets.
             self.aliens.empty()
@@ -122,10 +131,21 @@ class AlienInvasion:
         collisions = pygame.sprite.groupcollide(
             self.bullets, self.aliens, True, True)
 
+        if collisions:
+            for aliens in collisions.values():
+                self.stats.score += self.settings.alien_points * len(aliens)
+            self.sb.prep_score()
+            self.sb.check_high_score()
+
         if not self.aliens:
             # pozbycie sie istniejacych pociskow i utworzenie nowej floty.
             self.bullets.empty()
             self._create_fleet()
+            self.settings.increase_speed()
+
+            #inkrementacja numeru poziomu.
+            self.stats.level += 1
+            self.sb.prep_level()
 
     def _update_aliens(self):
         """sprawdzenie,czy flota obcych znajduje sie przy krawedzi
@@ -197,6 +217,7 @@ class AlienInvasion:
         if self.stats.ships_left > 0:
             # zmniejszenei wartosci przechowywanej w ships_left.
             self.stats.ships_left -= 1
+            self.sb.prep_ships()
 
             # usuniecie zawartosci list aliens i bullets.
             self.aliens.empty()
@@ -220,6 +241,9 @@ class AlienInvasion:
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
+
+        # wyswietlanie inforamacji o punktacji.
+        self.sb.show_score()
 
         # wyswietlenie przycisku tylko wtedy, gey gra nie jest aktywna.
         if not self.stats.game_active:
